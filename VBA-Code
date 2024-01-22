@@ -1,0 +1,54 @@
+Sub SaveAttachmentsFromSenderAndSubject()
+    Dim ns As NameSpace
+    Dim Inbox As MAPIFolder
+    Dim Item As Object
+    Dim Atmt As Attachment
+    Dim FileName As String
+    Dim i As Integer
+    Dim targetSender As String
+    Dim subjectContains As String
+    Dim saveFolderPath As String
+
+    ' Configure these variables
+    targetSender = "sender@example.com"  ' Set the sender's email address
+    subjectContains = "Your Subject String"  ' Set the subject string to search for
+    saveFolderPath = "C:\path\to\your\folder\"  ' Set your folder path to save attachments
+
+    Set ns = GetNamespace("MAPI")
+    Set Inbox = ns.GetDefaultFolder(olFolderInbox)
+    i = 0
+
+    MsgBox "Starting to search emails..."
+
+    ' Check each email in the inbox
+    For Each Item In Inbox.Items
+        If Item.Class = olMail Then
+            If Item.SenderEmailAddress = targetSender And InStr(Item.Subject, subjectContains) > 0 Then
+                If Item.Attachments.Count > 0 Then
+                    For Each Atmt In Item.Attachments
+                        FileName = saveFolderPath & Atmt.FileName
+                        ' Check if file already exists to avoid duplicates
+                        If Dir(FileName) = "" Then
+                            Atmt.SaveAsFile FileName
+                            i = i + 1
+                        End If
+                    Next Atmt
+                Else
+                    MsgBox "No attachments in email with matching criteria."
+                End If
+            End If
+        End If
+    Next Item
+
+    If i > 0 Then
+        MsgBox i & " attachments were saved.", vbInformation, "Done!"
+    Else
+        MsgBox "No attachments were found.", vbInformation, "Done!"
+    End If
+
+    ' Clean up
+    Set Atmt = Nothing
+    Set Item = Nothing
+    Set Inbox = Nothing
+    Set ns = Nothing
+End Sub
